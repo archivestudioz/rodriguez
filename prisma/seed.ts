@@ -41,7 +41,10 @@ const CATALOG: [string, string, string, number, number, number][] = [
 ];
 
 const DAYS = 365;
-const TARGET_REVENUE = 60000;
+// Target ~$60k of revenue per month. The dashboard's monthly view is a 30-day
+// window, so scale the year so any 30 days ≈ $60k (≈ $730k/yr).
+const MONTHLY_TARGET = 60000;
+const TARGET_REVENUE = Math.round((MONTHLY_TARGET * DAYS) / 30);
 
 // Deterministic pseudo-random so reseeds look similar.
 function jitter(seed: number): number {
@@ -87,7 +90,7 @@ async function main() {
   const naturalDaily = CATALOG.reduce((s, [, , , , price, base]) => s + base * price, 0);
   const scale = TARGET_REVENUE / (naturalDaily * DAYS * 1.07);
 
-  console.log(`Generating ${DAYS} days of sales (target ~$${TARGET_REVENUE.toLocaleString()})…`);
+  console.log(`Generating ${DAYS} days of sales (~$${MONTHLY_TARGET.toLocaleString()}/month, ~$${TARGET_REVENUE.toLocaleString()}/yr)…`);
   const sales: {
     productId: string;
     rawItem: string;
