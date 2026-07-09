@@ -1,14 +1,57 @@
 import Link from "next/link";
-import { getDashboard } from "@/lib/queries";
+import { getDashboard, getYearOverview } from "@/lib/queries";
 import { isPeriod, PERIODS, Period } from "@/lib/dates";
 import { money, moneyCompact, percent, qty } from "@/lib/format";
-import { totalsMargin } from "@/lib/margins";
 import { PageHeader, Content, Kpi, DeltaPill, SectionTitle, EmptyState } from "@/components/kit";
 import { PeriodTabs } from "@/components/PeriodTabs";
 import { TrendChart } from "@/components/TrendChart";
-import type { TopItem } from "@/lib/queries";
+import type { TopItem, YearOverview } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
+
+function YearBand({ y }: { y: YearOverview }) {
+  const figures = [
+    { label: "Revenue", value: money(y.revenue), gold: true },
+    { label: "Profit", value: money(y.profit), gold: true },
+    { label: "Profit margin", value: percent(y.margin) },
+    { label: "Units sold", value: qty(y.units) },
+  ];
+  return (
+    <div className="panel-ink relative overflow-hidden rounded-xl p-6">
+      <span className="absolute inset-x-0 top-0 h-[3px] bg-gold" aria-hidden />
+      <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-wrap items-end gap-x-10 gap-y-5">
+          {figures.map((f) => (
+            <div key={f.label}>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[hsl(var(--gold-soft))]">
+                {f.label}
+              </div>
+              <div
+                className="mt-1 font-numeric text-[28px] font-semibold leading-none"
+                style={f.gold ? { color: "hsl(var(--gold))" } : undefined}
+              >
+                {f.value}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="shrink-0 md:text-right">
+          <div className="eyebrow" style={{ color: "hsl(var(--gold-soft))" }}>
+            Year overall
+          </div>
+          <div className="mt-1 font-serif text-[15px] italic text-[hsl(var(--muted))]">
+            Past 12 months
+          </div>
+          {y.bestMonth && (
+            <div className="mt-1 text-[12px] text-[hsl(var(--gold-soft))]">
+              Best month: {y.bestMonth.label} · {moneyCompact(y.bestMonth.revenue)}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function TopTable({ rows, metric }: { rows: TopItem[]; metric: "profit" | "revenue" }) {
   if (rows.length === 0) {
@@ -66,7 +109,7 @@ export default async function DashboardPage({
 }) {
   const sp = await searchParams;
   const period: Period = isPeriod(sp.period) ? sp.period : "day";
-  const d = await getDashboard(period);
+  const [d, year] = await Promise.all([getDashboard(period), getYearOverview()]);
   const noun = PERIODS.find((p) => p.key === period)!.noun;
 
   const verse =
@@ -101,6 +144,11 @@ export default async function DashboardPage({
           />
         ) : (
           <>
+            {/* Yearly overall */}
+            <div className="mb-8">
+              <YearBand y={year} />
+            </div>
+
             {/* KPI row */}
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
               <Kpi

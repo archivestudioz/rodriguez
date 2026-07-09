@@ -298,6 +298,56 @@ export async function getLedger(unmatchedOnly: boolean): Promise<{
   return { sales, totalCount, unmatched, productOptions: products };
 }
 
+export type YearOverview = {
+  revenue: number;
+  cost: number;
+  profit: number;
+  margin: number | null;
+  units: number;
+  days: number;
+  bestMonth: { label: string; revenue: number } | null;
+};
+
+/** Trailing 12 months — the "yearly overall" figure. */
+export async function getYearOverview(): Promise<YearOverview> {
+  const now = new Date();
+  const start = new Date(now);
+  start.setFullYear(start.getFullYear() - 1);
+
+  const rows = await prisma.sale.findMany({
+    where: { saleDate: { gte: start, lte: now } },
+    select: { saleDate: true, quantity: true, lineTotal: true, unitCost: true },
+  });
+
+  const t = rows.reduce(
+    (acc, r) => accumulate(acc, { quantity: r.quantity, lineTotal: r.lineTotal, unitCost: r.unitCost }),
+    emptyTotals(),
+  );
+
+  // Best month by revenue within the window.
+  const byMonth = new Map<string, { label: string; revenue: number }>();
+  for (const r of rows) {
+    const d = r.saleDate;
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const label = d.toLocaleString("en-US", { month: "short", year: "numeric" });
+    const m = byMonth.get(key) ?? { label, revenue: 0 };
+    m.revenue += r.lineTotal;
+    byMonth.set(key, m);
+  }
+  const bestMonth =
+    [...byMonth.values()].sort((a, b) => b.revenue - a.revenue)[0] ?? null;
+
+  return {
+    revenue: t.revenue,
+    cost: t.cost,
+    profit: t.profit,
+    margin: totalsMargin(t),
+    units: t.units,
+    days: 365,
+    bestMonth,
+  };
+}
+
 export async function getCategories(): Promise<string[]> {
   const rows = await prisma.product.findMany({
     distinct: ["category"],

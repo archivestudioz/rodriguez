@@ -3,37 +3,50 @@ import { subDays } from "date-fns";
 
 const prisma = new PrismaClient();
 
-// A believable bodega catalog: name, PLU, category, cost, price
-const CATALOG = [
-  ["Cafe con Leche (M)", "1001", "Coffee & Hot", 0.45, 2.0],
-  ["Cafe con Leche (L)", "1002", "Coffee & Hot", 0.6, 2.75],
-  ["Bacon Egg & Cheese", "1010", "Deli", 1.35, 4.5],
-  ["Chopped Cheese", "1011", "Deli", 2.1, 7.0],
-  ["Turkey Hero", "1012", "Deli", 2.75, 8.5],
-  ["Coca-Cola 20oz", "2001", "Beverages", 0.85, 2.25],
-  ["Poland Spring 1L", "2002", "Beverages", 0.55, 1.75],
-  ["Red Bull 12oz", "2003", "Beverages", 1.55, 3.5],
-  ["Lay's Classic", "3001", "Snacks", 0.65, 1.75],
-  ["Doritos Nacho", "3002", "Snacks", 0.7, 2.0],
-  ["Snickers Bar", "3003", "Snacks", 0.55, 1.75],
-  ["Marlboro Gold", "4001", "Tobacco", 9.2, 12.0],
-  ["Loose Cigarette", "4002", "Tobacco", 0.4, 0.75],
-  ["Bustelo 10oz", "5001", "Grocery", 3.1, 6.49],
-  ["Wonder Bread", "5002", "Grocery", 1.3, 3.29],
-  ["Large Eggs Dozen", "5003", "Grocery", 2.4, 4.99],
-] as const;
+// Placeholder bodega catalog: [name, PLU, category, unitCost, salePrice, baseUnitsPerDay]
+const CATALOG: [string, string, string, number, number, number][] = [
+  // Sandwiches / Deli
+  ["Bacon Egg & Cheese", "1010", "Sandwiches", 1.35, 4.5, 5],
+  ["Chopped Cheese", "1011", "Sandwiches", 2.1, 7.0, 3],
+  ["Turkey Club Hero", "1012", "Sandwiches", 2.75, 8.5, 2],
+  ["Ham & Cheese", "1013", "Sandwiches", 1.8, 6.0, 2],
+  ["Grilled Cheese", "1014", "Sandwiches", 0.9, 3.5, 2],
+  // Coffee & Hot
+  ["Coffee (Medium)", "1001", "Coffee & Hot", 0.45, 2.0, 14],
+  ["Coffee (Large)", "1002", "Coffee & Hot", 0.6, 2.75, 9],
+  // Beverages
+  ["Coca-Cola 20oz", "2001", "Beverages", 0.85, 2.25, 9],
+  ["Poland Spring 1L", "2002", "Beverages", 0.55, 1.75, 6],
+  ["Red Bull 12oz", "2003", "Beverages", 1.55, 3.5, 3],
+  ["Arizona Iced Tea", "2004", "Beverages", 0.6, 1.5, 5],
+  ["Tropicana OJ", "2005", "Beverages", 1.2, 2.99, 2],
+  ["Gatorade 20oz", "2006", "Beverages", 0.9, 2.5, 3],
+  // Chips & Snacks
+  ["Lay's Classic", "3001", "Chips & Snacks", 0.65, 1.75, 5],
+  ["Doritos Nacho", "3002", "Chips & Snacks", 0.7, 2.0, 4],
+  ["Cheez-Its", "3003", "Chips & Snacks", 0.75, 2.25, 2],
+  ["Pretzels", "3004", "Chips & Snacks", 0.55, 1.5, 2],
+  // Candy
+  ["Snickers Bar", "4001", "Candy", 0.55, 1.75, 4],
+  ["M&M's Peanut", "4002", "Candy", 0.6, 1.85, 3],
+  ["Trident Gum", "4003", "Candy", 0.45, 1.5, 2],
+  // Grocery
+  ["Wonder Bread", "5002", "Grocery", 1.3, 3.29, 1],
+  ["Large Eggs Dozen", "5003", "Grocery", 2.4, 4.99, 1],
+  ["Bustelo Coffee 10oz", "5001", "Grocery", 3.1, 6.49, 1],
+  ["Milk ½ Gallon", "5004", "Grocery", 1.9, 3.99, 2],
+  // Tobacco
+  ["Marlboro Gold", "6001", "Tobacco", 9.2, 12.0, 2],
+  ["Newport 100s", "6002", "Tobacco", 9.4, 12.5, 1],
+];
 
-// Popularity weights — how many units/day roughly
-const POP: Record<string, number> = {
-  "1001": 40, "1002": 28, "1010": 30, "1011": 18, "1012": 8,
-  "2001": 35, "2002": 22, "2003": 14, "3001": 20, "3002": 16,
-  "3003": 18, "4001": 12, "4002": 24, "5001": 4, "5002": 6, "5003": 5,
-};
+const DAYS = 365;
+const TARGET_REVENUE = 60000;
 
-// deterministic-ish jitter
-function jitter(seed: number) {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
+// Deterministic pseudo-random so reseeds look similar.
+function jitter(seed: number): number {
+  const x = Math.sin(seed * 12.9898) * 43758.5453;
+  return x - Math.floor(x); // 0..1
 }
 
 async function main() {
@@ -43,18 +56,23 @@ async function main() {
   await prisma.importBatch.deleteMany();
   await prisma.product.deleteMany();
 
-  console.log("Seeding catalog…");
+  console.log(`Seeding ${CATALOG.length} products…`);
   const products = [];
   for (const [name, sku, category, unitCost, salePrice] of CATALOG) {
-    const p = await prisma.product.create({
-      data: { name, sku, category, unitCost, salePrice },
-    });
-    products.push(p);
+    products.push(
+      await prisma.product.create({
+        data: { name, sku, category, unitCost, salePrice },
+      }),
+    );
   }
   const bySku = new Map(products.map((p) => [p.sku!, p]));
 
-  console.log("Generating ~120 days of sales…");
-  const DAYS = 120;
+  // Scale so a year of sales lands near $60k. Weekend avg factor ≈ 1.07,
+  // jitter mean ≈ 1.0.
+  const naturalDaily = CATALOG.reduce((s, [, , , , price, base]) => s + base * price, 0);
+  const scale = TARGET_REVENUE / (naturalDaily * DAYS * 1.07);
+
+  console.log(`Generating ${DAYS} days of sales (target ~$${TARGET_REVENUE.toLocaleString()})…`);
   const sales: {
     productId: string;
     rawItem: string;
@@ -67,63 +85,52 @@ async function main() {
   }[] = [];
 
   let s = 1;
+  let total = 0;
   for (let d = 0; d < DAYS; d++) {
     const day = subDays(new Date(), d);
-    // weekends busier
     const dow = day.getDay();
     const weekendBoost = dow === 0 || dow === 6 ? 1.25 : 1;
-    for (const [sku, base] of Object.entries(POP)) {
+    for (const [name, sku, , unitCost, price, base] of CATALOG) {
       const p = bySku.get(sku)!;
-      const units = Math.max(0, Math.round(base * weekendBoost * (0.6 + jitter(s++) * 0.8)));
-      if (units === 0) continue;
-      // occasional promo pricing
-      const price = p.salePrice * (jitter(s++) > 0.94 ? 0.9 : 1);
+      const j = 0.55 + jitter(s++) * 0.9; // 0.55..1.45, mean ≈ 1.0
+      const units = Math.round(base * weekendBoost * j * scale);
+      if (units <= 0) continue;
+      const promo = jitter(s++) > 0.94 ? 0.9 : 1; // occasional 10% off
+      const unitPrice = Math.round(price * promo * 100) / 100;
+      const lineTotal = Math.round(unitPrice * units * 100) / 100;
+      total += lineTotal;
       sales.push({
         productId: p.id,
-        rawItem: p.name,
-        rawSku: p.sku,
+        rawItem: name,
+        rawSku: sku,
         saleDate: day,
         quantity: units,
-        unitPrice: Math.round(price * 100) / 100,
-        lineTotal: Math.round(price * units * 100) / 100,
-        unitCost: p.unitCost,
+        unitPrice,
+        lineTotal,
+        unitCost,
       });
     }
   }
 
-  // A couple of unmatched labels, to demonstrate reconciliation
-  for (let d = 0; d < 20; d++) {
-    const day = subDays(new Date(), d);
-    sales.push({
-      productId: null as unknown as string,
-      rawItem: "MISC GROCERY",
-      rawSku: "9999",
-      saleDate: day,
-      quantity: Math.round(3 + jitter(s++) * 6),
-      unitPrice: 1.99,
-      lineTotal: Math.round((1.99 * (3 + jitter(s) * 6)) * 100) / 100,
-      unitCost: null as unknown as number,
-    });
-  }
-
   const batch = await prisma.importBatch.create({
     data: {
-      filename: "seed-history.csv",
+      filename: "placeholder-year.csv",
       source: "sd-card",
-      mapping: JSON.stringify({ saleDate: "Date", item: "Item", sku: "PLU" }),
+      mapping: JSON.stringify({ saleDate: "Date", item: "Description", sku: "PLU" }),
       rowCount: sales.length,
-      matchedCount: sales.filter((x) => x.productId).length,
+      matchedCount: sales.length,
     },
   });
 
-  // chunked insert
   for (let i = 0; i < sales.length; i += 500) {
     await prisma.sale.createMany({
       data: sales.slice(i, i + 500).map((x) => ({ ...x, batchId: batch.id })),
     });
   }
 
-  console.log(`Done. ${products.length} products, ${sales.length} sales.`);
+  console.log(
+    `Done. ${products.length} products, ${sales.length} sales, ~$${Math.round(total).toLocaleString()} revenue over ${DAYS} days.`,
+  );
 }
 
 main()
