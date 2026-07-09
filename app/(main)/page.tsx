@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getDashboard, getYearOverview } from "@/lib/queries";
-import { isPeriod, PERIODS, Period } from "@/lib/dates";
+import { isPeriod, PERIODS, Period, windowDays } from "@/lib/dates";
 import { money, moneyCompact, percent, qty } from "@/lib/format";
 import { PageHeader, Content, Kpi, DeltaPill, SectionTitle, EmptyState } from "@/components/kit";
 import { PeriodTabs } from "@/components/PeriodTabs";
@@ -111,6 +111,8 @@ export default async function DashboardPage({
   const period: Period = isPeriod(sp.period) ? sp.period : "day";
   const [d, year] = await Promise.all([getDashboard(period), getYearOverview()]);
   const noun = PERIODS.find((p) => p.key === period)!.noun;
+  const win = windowDays(period);
+  const priorLabel = win === 1 ? "prior day" : `prior ${win} days`;
 
   const verse =
     period === "day"
@@ -155,7 +157,7 @@ export default async function DashboardPage({
                 label={`Revenue · ${noun}`}
                 value={money(d.current.revenue)}
                 delta={<DeltaPill current={d.current.revenue} previous={d.previous.revenue} />}
-                sub={`Prior ${period}: ${moneyCompact(d.previous.revenue)}`}
+                sub={`Vs ${priorLabel}: ${moneyCompact(d.previous.revenue)}`}
               />
               <Kpi
                 label={`Profit · ${noun}`}

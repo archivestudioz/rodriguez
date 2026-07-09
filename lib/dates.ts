@@ -23,13 +23,28 @@ export type Period = "day" | "week" | "month" | "quarter";
 
 export const PERIODS: { key: Period; label: string; noun: string }[] = [
   { key: "day", label: "Daily", noun: "Today" },
-  { key: "week", label: "Weekly", noun: "This week" },
-  { key: "month", label: "Monthly", noun: "This month" },
-  { key: "quarter", label: "Quarterly", noun: "This quarter" },
+  { key: "week", label: "Weekly", noun: "Last 7 days" },
+  { key: "month", label: "Monthly", noun: "Last 30 days" },
+  { key: "quarter", label: "Quarterly", noun: "Last 90 days" },
 ];
 
 export function isPeriod(v: unknown): v is Period {
   return v === "day" || v === "week" || v === "month" || v === "quarter";
+}
+
+/** Length of each reporting window in days. Trailing windows always contain a
+ *  full period, so the figures scale sensibly (day → week → month → quarter). */
+export function windowDays(p: Period): number {
+  switch (p) {
+    case "day":
+      return 1;
+    case "week":
+      return 7;
+    case "month":
+      return 30;
+    case "quarter":
+      return 90;
+  }
 }
 
 const WEEK_OPTS = { weekStartsOn: 1 as const }; // Monday
@@ -60,20 +75,19 @@ export function periodEnd(d: Date, p: Period): Date {
   }
 }
 
+/** The current trailing window, e.g. the last 7 days including today. */
 export function currentRange(p: Period, now = new Date()): { start: Date; end: Date } {
-  return { start: periodStart(now, p), end: periodEnd(now, p) };
+  const d = windowDays(p);
+  return { start: startOfDay(subDays(now, d - 1)), end: endOfDay(now) };
 }
 
+/** The window of equal length immediately before the current one, for deltas. */
 export function previousRange(p: Period, now = new Date()): { start: Date; end: Date } {
-  const prev =
-    p === "day"
-      ? subDays(now, 1)
-      : p === "week"
-        ? subWeeks(now, 1)
-        : p === "month"
-          ? subMonths(now, 1)
-          : subQuarters(now, 1);
-  return { start: periodStart(prev, p), end: periodEnd(prev, p) };
+  const d = windowDays(p);
+  return {
+    start: startOfDay(subDays(now, 2 * d - 1)),
+    end: endOfDay(subDays(now, d)),
+  };
 }
 
 export function bucketLabel(d: Date, p: Period): string {
