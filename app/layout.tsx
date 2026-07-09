@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/Sidebar";
 
 export const metadata: Metadata = {
   title: "Rodriguez — Ledger of Provision",
@@ -15,12 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <Sidebar />
-        <main style={{ marginLeft: "var(--sidebar-width)" }} className="min-h-screen">
-          {children}
-        </main>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

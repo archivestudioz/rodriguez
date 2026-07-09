@@ -138,6 +138,16 @@ export function Sidebar() {
         <p className="mt-1.5 text-[10px] tracking-[0.16em] uppercase text-muted-foreground/70">
           Every loaf accounted for
         </p>
+        <a
+          href="/api/logout"
+          className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <path d="M16 17l5-5-5-5M21 12H9" />
+          </svg>
+          Sign out
+        </a>
       </div>
     </aside>
   );

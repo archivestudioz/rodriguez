@@ -17,7 +17,7 @@ export function Sigil({
       aria-hidden="true"
       className={className}
     >
-      {/* radiant rays */}
+      {/* radiant rays — coords rounded so SSR and client render identically */}
       <g stroke="hsl(var(--gold))" strokeWidth="1.4" strokeLinecap="round">
         {Array.from({ length: 12 }).map((_, i) => {
           const a = (i * Math.PI) / 6;
@@ -25,13 +25,14 @@ export function Sigil({
           const outer = i % 3 === 0 ? 21.5 : 19;
           const cx = 24;
           const cy = 24;
+          const r = (n: number) => Math.round(n * 1000) / 1000;
           return (
             <line
               key={i}
-              x1={cx + inner * Math.cos(a)}
-              y1={cy + inner * Math.sin(a)}
-              x2={cx + outer * Math.cos(a)}
-              y2={cy + outer * Math.sin(a)}
+              x1={r(cx + inner * Math.cos(a))}
+              y1={r(cy + inner * Math.sin(a))}
+              x2={r(cx + outer * Math.cos(a))}
+              y2={r(cy + outer * Math.sin(a))}
               opacity={i % 3 === 0 ? 0.9 : 0.5}
             />
           );
