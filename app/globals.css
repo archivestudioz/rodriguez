@@ -1,0 +1,290 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   RODRIGUEZ — sacred ledger design system
+   Palette: ivory · charcoal · liturgical gold  (black/yellow/white)
+   Discipline: flat surfaces, hairline rules, tabular numerals,
+   classical serif display. No gradients-as-decoration, no slop.
+   ============================================================ */
+
+:root {
+  --background: 44 38% 97%;      /* warm ivory / parchment */
+  --foreground: 40 22% 9%;       /* warm charcoal, near-black */
+  --card: 45 50% 99%;            /* near-white, faintly warm */
+  --muted: 44 30% 93%;           /* soft parchment panel */
+  --muted-foreground: 40 12% 37%;/* readable warm gray */
+  --border: 43 28% 86%;          /* hairline */
+  --border-strong: 40 20% 14%;   /* ink rule */
+
+  --primary: 40 22% 9%;          /* ink black — primary actions */
+  --primary-foreground: 44 38% 97%;
+
+  --gold: 43 74% 52%;            /* liturgical gold — the accent */
+  --gold-deep: 42 68% 34%;       /* darker gold for small text/rules */
+  --gold-soft: 44 70% 90%;       /* gold tint fill */
+
+  --positive: 42 68% 34%;        /* gain — golden/blessed */
+  --negative: 0 55% 42%;         /* loss — rubric red, alert only */
+  --warning: 42 68% 34%;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --sidebar-width: 264px;
+  --content-max: 1200px;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  font-feature-settings: "cv01", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---- Typography ------------------------------------------------ */
+.font-serif {
+  font-family: var(--font-serif);
+}
+.font-numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.01em;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-serif);
+  letter-spacing: -0.01em;
+  line-height: 1.12;
+}
+
+.display {
+  font-family: var(--font-serif);
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Carved, inscriptional wordmark — RODRIGUEZ */
+.wordmark {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-feature-settings: "smcp";
+}
+
+/* ---- Sacred ornament ------------------------------------------- */
+/* Thin gold double-rule, like the frame of a scripture page. */
+.rule-gold {
+  border: none;
+  height: 3px;
+  background:
+    linear-gradient(hsl(var(--gold)) 0 0) top / 100% 1px no-repeat,
+    linear-gradient(hsl(var(--gold)) 0 0) bottom / 100% 1px no-repeat;
+}
+
+/* Faint radiant halo behind the header. */
+.halo {
+  position: relative;
+  isolation: isolate;
+}
+.halo::before {
+  content: "";
+  position: absolute;
+  inset: -40% 20% auto 20%;
+  height: 340px;
+  z-index: -1;
+  background: radial-gradient(
+    ellipse 60% 100% at 50% 0%,
+    hsl(var(--gold) / 0.16),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* ---- Surfaces -------------------------------------------------- */
+.card {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.625rem;
+}
+
+.panel-ink {
+  background-color: hsl(var(--foreground));
+  color: hsl(var(--primary-foreground));
+}
+
+/* ---- Buttons --------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 40px;
+  padding: 0 1rem;
+  border-radius: 0.5rem;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 180ms, color 180ms, transform 120ms;
+  white-space: nowrap;
+}
+.btn:active {
+  transform: translateY(0.5px);
+}
+.btn-primary {
+  background-color: hsl(var(--foreground));
+  color: hsl(var(--primary-foreground));
+}
+.btn-primary:hover {
+  background-color: hsl(40 22% 18%);
+}
+.btn-gold {
+  background-color: hsl(var(--gold));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--gold-deep) / 0.35);
+}
+.btn-gold:hover {
+  background-color: hsl(43 76% 46%);
+}
+.btn-ghost {
+  background-color: transparent;
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border-strong) / 0.25);
+}
+.btn-ghost:hover {
+  background-color: hsl(var(--muted));
+}
+.btn-sm {
+  height: 32px;
+  padding: 0 0.75rem;
+  font-size: 13px;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---- Form controls --------------------------------------------- */
+.field {
+  height: 40px;
+  width: 100%;
+  padding: 0 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border-strong) / 0.28);
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  font-size: 14px;
+  transition: border-color 160ms, box-shadow 160ms;
+}
+.field:focus {
+  outline: none;
+  border-color: hsl(var(--gold-deep));
+  box-shadow: 0 0 0 3px hsl(var(--gold) / 0.28);
+}
+select.field {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23736b56' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: hsl(var(--muted-foreground));
+}
+
+/* ---- Badges / pills -------------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 22px;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.badge-gold {
+  background-color: hsl(var(--gold-soft));
+  color: hsl(var(--gold-deep));
+  border: 1px solid hsl(var(--gold) / 0.4);
+}
+.badge-muted {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  border: 1px solid hsl(var(--border));
+}
+.badge-negative {
+  background-color: hsl(var(--negative) / 0.1);
+  color: hsl(var(--negative));
+  border: 1px solid hsl(var(--negative) / 0.3);
+}
+
+/* ---- Focus ring (accessibility, gold offset) ------------------- */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid hsl(var(--gold-deep));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---- Tables ---------------------------------------------------- */
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.tbl thead th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid hsl(var(--border-strong) / 0.35);
+}
+.tbl tbody td {
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.tbl tbody tr:hover {
+  background-color: hsl(var(--gold-soft) / 0.35);
+}
+.num {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: hsl(var(--gold) / 0.4);
+}

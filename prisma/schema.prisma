@@ -1,0 +1,81 @@
+// Bodega Sales & Profit CRM — data model
+//
+// Local dev uses SQLite (zero setup). To deploy on Vercel, switch the
+// datasource provider to "postgresql" and point DATABASE_URL at a Neon
+// database (Vercel Marketplace). The schema is written to be portable.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// A product the bodega sells. This is where profit comes from: the register
+/// reports what an item SOLD for, but only the catalog knows its wholesale COST.
+model Product {
+  id        String   @id @default(cuid())
+  name      String
+  sku       String?  @unique // PLU / barcode code as it appears on the register
+  category  String   @default("Uncategorized")
+  unitCost  Float    @default(0) // wholesale cost you pay per unit
+  salePrice Float    @default(0) // default retail price per unit
+  unit      String   @default("each")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales   Sale[]
+  aliases ProductAlias[]
+
+  @@index([category])
+}
+
+/// Maps a raw label/SKU from the register file to a Product, so unmatched
+/// import rows can be reconciled once and remembered forever.
+model ProductAlias {
+  id        String   @id @default(cuid())
+  raw       String   @unique // normalized raw item label or sku from the file
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+/// One SD-card import (or a manual-entry session).
+model ImportBatch {
+  id           String   @id @default(cuid())
+  filename     String
+  source       String   @default("sd-card") // sd-card | manual
+  mapping      String   @default("{}") // JSON: which file columns map to which fields
+  rowCount     Int      @default(0)
+  matchedCount Int      @default(0)
+  importedAt   DateTime @default(now())
+
+  sales Sale[]
+}
+
+/// A single sold line item. Profit = lineTotal - (unitCost * quantity),
+/// computed only when unitCost is known (product matched at import time).
+model Sale {
+  id        String   @id @default(cuid())
+  batchId   String?
+  batch     ImportBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  rawItem   String // raw item name as it appeared in the file
+  rawSku    String?
+  saleDate  DateTime
+  quantity  Float    @default(1)
+  unitPrice Float    @default(0)
+  lineTotal Float    @default(0)
+  unitCost  Float? // wholesale cost snapshot at import time; null = unknown
+
+  createdAt DateTime @default(now())
+
+  @@index([saleDate])
+  @@index([productId])
+  @@index([batchId])
+}
