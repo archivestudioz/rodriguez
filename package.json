@@ -5,7 +5,7 @@
   "scripts": {
     "predev": "node prisma/set-provider.mjs",
     "dev": "next dev",
-    "build": "node prisma/set-provider.mjs && prisma generate && prisma db push --skip-generate && next build",
+    "build": "node prisma/set-provider.mjs && prisma generate && node prisma/db-push.mjs && next build",
     "start": "next start",
     "lint": "next lint",
     "db:push": "node prisma/set-provider.mjs && prisma db push",

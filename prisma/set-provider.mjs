@@ -13,7 +13,13 @@ import { dirname, join } from "node:path";
 const here = dirname(fileURLToPath(import.meta.url));
 const schemaPath = join(here, "schema.prisma");
 
-const url = process.env.DATABASE_URL ?? "";
+const url =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.DATABASE_URL_UNPOOLED ||
+  process.env.POSTGRES_URL_NON_POOLING ||
+  "";
 let target = null;
 if (/^postgres(ql)?:\/\//i.test(url)) target = "postgresql";
 else if (/^file:/i.test(url)) target = "sqlite";
