@@ -52,8 +52,11 @@ function jitter(seed: number): number {
 async function main() {
   // In the Vercel build we only want to populate a *fresh* database, never
   // touch real data. Locally `npm run db:seed` runs without this flag and
-  // always reseeds.
-  if (process.env.SEED_ONLY_IF_EMPTY === "1") {
+  // always reseeds. SEED_FORCE=1 overrides the empty check (one-time reset).
+  const force = process.env.SEED_FORCE === "1";
+  if (force) {
+    console.log("[seed] SEED_FORCE set — replacing all data with placeholder set.");
+  } else if (process.env.SEED_ONLY_IF_EMPTY === "1") {
     const existing = await prisma.product.count();
     if (existing > 0) {
       console.log(`[seed] ${existing} products already present — skipping.`);
